@@ -1,51 +1,149 @@
 // GET REQUEST
 function getTodos() {
-  console.log('GET Request');
+  // axios({
+  //   method : 'get',
+  //   url: 'https://jsonplaceholder.typicode.com/todos'
+  // }).then(res => showOutput(res))
+  // .catch(err => console.log(err))
+
+  //method in axios is get by default if we don't specify anything
+  // axios('https://jsonplaceholder.typicode.com/todos?_limit=5')
+  // .then(res => showOutput(res))
+  // .catch(err => console.log(err))
+
+  //recommended method
+  axios.get('https://jsonplaceholder.typicode.com/todos?_limit=5', {timeout : 5000})
+  .then(res => showOutput(res))
+  .catch(err => console.log(err))
 }
 
 // POST REQUEST
 function addTodo() {
-  console.log('POST Request');
+//   axios({
+//     method: 'post',
+//     url : 'https://jsonplaceholder.typicode.com/todos',
+//     data :{
+//       id: 'NewTodo',
+//       complete : false
+//     }
+//   }).then(res => showOutput(res))
+//   .catch(err => console.log(err))
+
+    axios.post('https://jsonplaceholder.typicode.com/todos', { title : 'new', completed : false})
+    .then(res => showOutput(res))
+    .catch(err => console.log(err))
 }
 
 // PUT/PATCH REQUEST
 function updateTodo() {
-  console.log('PUT/PATCH Request');
+  axios.patch(
+    'https://jsonplaceholder.typicode.com/todos/1',{
+      title: 'Updated Todo',
+      completed : false
+    }
+  ).then(msg => {showOutput(msg)})
+  .catch(err => {console.log(err)})
 }
 
 // DELETE REQUEST
 function removeTodo() {
-  console.log('DELETE Request');
+  axios.delete('https://jsonplaceholder.typicode.com/todos/1')
+  .then(msg => {showOutput(msg)})
+  .catch(err => {console.log(err)})
 }
 
 // SIMULTANEOUS DATA
 function getData() {
-  console.log('Simultaneous Request');
+  axios.all([axios.get('https://jsonplaceholder.typicode.com/todos?_limit=5'),
+            axios.get('https://jsonplaceholder.typicode.com/posts?_limit=5')]
+  ).then(axios.spread((todos, posts) => showOutput(posts)))
+  .catch(err => (console.log(err)))   
 }
 
 // CUSTOM HEADERS
 function customHeaders() {
-  console.log('Custom Headers');
+  const config = {
+    headers : {
+    'Content-Type' : 'application/json',
+    Authorization : 'some_token'
+    }
+  };
+
+  axios.post('https://jsonplaceholder.typicode.com/todos', { title : 'new todo', completed : false},config)
+    .then(res => showOutput(res))
+    .catch(err => console.log(err))
 }
 
 // TRANSFORMING REQUESTS & RESPONSES
 function transformResponse() {
-  console.log('Transform Response');
+  const options = {
+    method : 'post',
+    url : 'https://jsonplaceholder.typicode.com/todos',
+    data : {
+      title : 'Header title'
+    },
+    transformResponse: axios.defaults.transformResponse.concat(data => {
+      data.title = data.title.toUpperCase();
+      return data
+    })
+  }
+  axios(options).then(res => showOutput(res))
 }
 
 // ERROR HANDLING
 function errorHandling() {
-  console.log('Error Handling');
+  axios.get('https://jsonplaceholder.typicode.com/todos@',{
+            validateStatus : function(status){
+                return status <= 500; // reject only if statu is greater than or equal to 500
+            }
+          })
+  .then(res => showOutput(res))
+  .catch(err=> {
+    if(err.response){
+      console.log(err.response.data)
+      console.log(err.response.status)
+      console.log(err.response.headers)
+
+      if(err.response.status === 404){
+        alert('Page Not Found')
+      }
+    }else if(err.request) {
+      console.log(err.request);
+    }else {
+      console.log(err.message)
+    }
+  })
 }
 
 // CANCEL TOKEN
 function cancelToken() {
-  console.log('Cancel Token');
+  const source = axios.CancelToken.source();
+  axios.get('https://jsonplaceholder.typicode.com/todos', {
+    cancelToken: source.token
+  }).then(res => showOutput(res))
+  .catch(thrown =>{
+    if(axios.isCancel(thrown)){
+      console.log('Request Canceled',thrown.msg)
+    }
+  })
+
+  if(true){
+    source.cancel('Request Cancelled')
+  }
 }
 
 // INTERCEPTING REQUESTS & RESPONSES
-
+axios.interceptors.request.use(config => {
+  console.log(`${config.method.toUpperCase()} sent at ${config.url} at ${Date.now().toString()}`)
+  return config
+}, error => {
+  return Promise.reject(error)
+})
 // AXIOS INSTANCES
+const axiosinstances = axios.create({
+  baseURL : 'https://jsonplaceholder.typicode.com'})
+
+axiosinstances.get('/comments').then(res => showOutput(res))
 
 // Show output in browser
 function showOutput(res) {
